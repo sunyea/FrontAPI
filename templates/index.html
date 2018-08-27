@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>前置API测试</title>
+	<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='js/layui/css/layui.css') }}">
+	<script type="text/javascript" src="{{ url_for('static', filename='js/layui/layui.js') }}"></script>
+</head>
+<body>
+<blockquote class="layui-elem-quote">服务端测试程序</blockquote>
+<div style="width:90%; margin:0 auto;">
+<form class="layui-form" action="">
+  <div class="layui-form-item">
+    <label class="layui-form-label">Action：</label>
+    <div class="layui-input-inline">
+      <input type="text" name="action" required  lay-verify="required" class="layui-input" value="resp">
+    </div>
+    <div class="layui-form-mid layui-word-aux">填写服务识别的命令，如：login</div>
+  </div>
+  <div class="layui-form-item">
+    <label class="layui-form-label">发送主题：</label>
+    <div class="layui-input-inline">
+      <input type="text" name="out_topic" required  lay-verify="required" class="layui-input" value="tp.test.common">
+    </div>
+    <div class="layui-form-mid layui-word-aux">将信息发送到的主题，如：tp.login</div>
+  </div>
+  <div class="layui-form-item">
+    <label class="layui-form-label">接收主题：</label>
+    <div class="layui-input-inline">
+      <input type="text" name="in_topic" required  lay-verify="required" class="layui-input" value="tp.test.common.response">
+    </div>
+    <div class="layui-form-mid layui-word-aux">从主题接收信息，如：tp.login.uid</div>
+  </div>
+  <div class="layui-form-item">
+    <label class="layui-form-label">Json数据：</label>
+    <div class="layui-input-block">
+      <textarea name="data" rows="10" placeholder='请输入你将提交的数据，数据格式请用json格式, 如：{"uid": "test1", "pwd": "test1"}' class="layui-textarea">{"data": "1"}</textarea>
+    </div>
+  </div>
+  <div class="layui-form-item">
+    <div class="layui-input-block">
+      <button class="layui-btn" lay-submit lay-filter="go1">提交</button>
+    </div>
+  </div>
+</form>
+<div class="layui-card">
+  <div class="layui-card-header">信息反馈</div>
+  <div class="layui-card-body">
+    <textarea id="response" rows="10" class="layui-textarea" style="background-color:#000000;color:#ffffff;"></textarea>
+  </div>
+</div>
+</div>
+<script>
+layui.use(['form', 'layer'], function() {
+    var form = layui.form,
+        layer = layui.layer,
+        $ = layui.$;
+
+    //python提交
+    form.on('submit(go1)', function (data) {
+        /*
+        action = data.field.action;
+        in_topic = data.field.in_topic;
+        out_topic = data.field.out_topic;
+        data = data.field.data;
+        */
+        $.post('/common', data.field, function(result){
+            console.log(result);
+            $('#response').val(JSON.stringify(result));
+        }, 'json');
+        return false;
+    });
+
+});
+</script>
+
+</body>
+</html>

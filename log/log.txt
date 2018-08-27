@@ -1,0 +1,26 @@
+2018-08-27 14:02:07,294 - CommonAPI - DEBUG - 
+****************开始处理通用请求，in_topic:tp.test.common.response, out_topic:tp.test.common, data:{"data": "1"}
+2018-08-27 14:02:07,294 - CommonAPI - DEBUG - 发送命令:{'data': {'data': '1'}, 'action': 'resp', 'sessionid': 'ba84c7e2a9be11e88c2100005b8393df'}，并等待返回值
+2018-08-27 14:02:07,620 - CommonAPI - INFO - ****START**** Kafka启动成功.
+2018-08-27 14:02:13,962 - CommonAPI - ERROR - 获取超时，尝试第1次重新获取.
+2018-08-27 14:02:19,972 - CommonAPI - ERROR - 获取超时，尝试第2次重新获取.
+2018-08-27 14:02:25,448 - CommonAPI - DEBUG - 
+****************开始处理通用请求，in_topic:tp.test.common.response, out_topic:tp.test.common, data:{"data": "1"}
+2018-08-27 14:02:25,459 - CommonAPI - DEBUG - 发送命令:{'data': {'data': '1'}, 'action': 'resp2', 'sessionid': 'c556b2d8a9be11e89e6e00005b8393f1'}，并等待返回值
+2018-08-27 14:02:25,996 - CommonAPI - ERROR - 获取超时，尝试第3次重新获取.
+2018-08-27 14:02:26,194 - CommonAPI - INFO - ****START**** Kafka启动成功.
+2018-08-27 14:02:32,035 - CommonAPI - ERROR - 获取超时，尝试第4次重新获取.
+2018-08-27 14:02:32,046 - CommonAPI - INFO - ****STOP**** Kafka实例停止运行.
+2018-08-27 14:02:32,046 - CommonAPI - DEBUG - 成功接收返回值：{"data": null, "err": "\u83b7\u53d6\u56de\u590d\u8d85\u65f6", "sessionid": "ba84c7e2a9be11e88c2100005b8393df", "code": -3}
+2018-08-27 14:02:32,046 - CommonAPI - DEBUG - 
+****************结束处理通用请求
+
+2018-08-27 14:02:33,325 - CommonAPI - ERROR - 获取超时，尝试第1次重新获取.
+2018-08-27 14:02:39,338 - CommonAPI - ERROR - 获取超时，尝试第2次重新获取.
+2018-08-27 14:02:45,348 - CommonAPI - ERROR - 获取超时，尝试第3次重新获取.
+2018-08-27 14:02:51,354 - CommonAPI - ERROR - 获取超时，尝试第4次重新获取.
+2018-08-27 14:02:51,359 - CommonAPI - INFO - ****STOP**** Kafka实例停止运行.
+2018-08-27 14:02:51,359 - CommonAPI - DEBUG - 成功接收返回值：{"data": null, "err": "\u83b7\u53d6\u56de\u590d\u8d85\u65f6", "sessionid": "c556b2d8a9be11e89e6e00005b8393f1", "code": -3}
+2018-08-27 14:02:51,360 - CommonAPI - DEBUG - 
+****************结束处理通用请求
+
