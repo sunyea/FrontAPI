@@ -2,14 +2,15 @@
 # -*- coding: utf-8 -*-
 # @File  : Kafka.py
 # @Author: Liaop
-# @Date  : 2018-08-24
+# @Date  : 2018-09-29
 # @Desc  : Kafka操作的基础类，此类封装基本操作，主要用于设计服务端和前置端应用时使用
 
 from pykafka import KafkaClient
 from pykafka.common import CompressionType
-import json
+from pykafka.topic import OffsetType
+import json, time
 
-from LogFlask import Loger
+# from LogFlask import Loger
 
 
 class Kafka(object):
@@ -24,13 +25,11 @@ class Kafka(object):
         :param max_buf: 最大收发数据大小
         :param debug: 是否调试模式，如果是调试模式，cosumer将使用simple_consumer,否则使用balance_consumer
         '''
-        if loger:
-            self.loger = loger
-        else:
-            self.loger = Loger('Kafka', 'debug')
+        self.loger = loger
         self.__run = False
         if not hosts:
-            self.loger.error('Kafka服务器地址为空.')
+            if self.loger:
+                self.loger.error('Kafka服务器地址为空.')
         self.__hosts = hosts
         self.__encoding = encoding
         self.__max_buf = max_buf
@@ -48,10 +47,12 @@ class Kafka(object):
         :return: 正确初始化返回true
         '''
         if not out_topic:
-            self.loger.error('主题名不能为空.')
+            if self.loger:
+                self.loger.error('主题名不能为空.')
             return False
         if not self.__hosts:
-            self.loger.error('Kafka服务器地址为空，初始化失败.')
+            if self.loger:
+                self.loger.error('Kafka服务器地址为空，初始化失败.')
             return False
         try:
             if self.__client is None:
@@ -63,10 +64,11 @@ class Kafka(object):
                                                                              linger_ms=0)
             return True
         except Exception as e:
-            self.loger.error('初始化producer异常：{}'.format(e))
+            if self.loger:
+                self.loger.error('初始化producer异常：{}'.format(e))
             return False
 
-    def __init_consumer(self, in_topic, consumer_group, consumer_timeout=0, balance=False):
+    def __init_consumer(self, in_topic, consumer_group, consumer_timeout=0, auto_offset_reset=OffsetType.LATEST, balance=False):
         '''
         初始化Consumer
         :param in_topic: 主题名
@@ -75,13 +77,16 @@ class Kafka(object):
         :return: 正确初始化返回true
         '''
         if not in_topic:
-            self.loger.error('主题名不能为空.')
+            if self.loger:
+                self.loger.error('主题名不能为空.')
             return False
         if not consumer_group:
-            self.loger.error('消费者组名不能为空.')
+            if self.loger:
+                self.loger.error('消费者组名不能为空.')
             return False
         if not self.__hosts:
-            self.loger.error('Kafka服务器地址为空，初始化失败.')
+            if self.loger:
+                self.loger.error('Kafka服务器地址为空，初始化失败.')
             return False
         try:
             if self.__client is None:
@@ -92,14 +97,20 @@ class Kafka(object):
                 consumer_group = consumer_group.encode(self.__encoding)
             if balance:
                 self.__consumer = (self.__client.topics[in_topic]).get_balanced_consumer(consumer_group=consumer_group,
+                                                                                         auto_offset_reset=auto_offset_reset,
                                                                                          consumer_timeout_ms=consumer_timeout,
+                                                                                         fetch_message_max_bytes=self.__max_buf,
                                                                                          managed=True)
             else:
                 self.__consumer = (self.__client.topics[in_topic]).get_simple_consumer(consumer_group=consumer_group,
-                                                                                       consumer_timeout_ms=consumer_timeout)
+                                                                                       auto_offset_reset=auto_offset_reset,
+                                                                                       consumer_timeout_ms=consumer_timeout,
+                                                                                       fetch_message_max_bytes=self.__max_buf)
+
             return True
         except Exception as e:
-            self.loger.error('初始化consumer异常：{}'.format(e))
+            if self.loger:
+                self.loger.error('初始化consumer异常：{}'.format(e))
             return False
 
     def start(self, in_topic=None, out_topic=None, consumer_group=None, **kwargs):
@@ -112,31 +123,44 @@ class Kafka(object):
         :return: 如果成功返回True
         '''
         if self.__run:
-            self.loger.error('Kafka实例已经启动中.')
+            if self.loger:
+                self.loger.error('Kafka实例已经启动中.')
             return False
         if in_topic == out_topic:
-            self.loger.error('输入与输出主题不能一样')
+            if self.loger:
+                self.loger.error('输入与输出主题不能一样')
             return False
         consumer_timeout = kwargs.get('consumer_timeout', 0)
         balance = kwargs.get('balance', False)
+        auto_offset_reset = kwargs.get('auto_offset_reset', OffsetType.LATEST)
+        if (out_topic is None) and (in_topic is not None):
+            if self.__init_consumer(in_topic,
+                                    consumer_group,
+                                    consumer_timeout=consumer_timeout,
+                                    auto_offset_reset=auto_offset_reset,
+                                    balance=balance):
+                self.__run = True
+                return True
+            else:
+                return False
         if (in_topic is None) and (out_topic is not None):
             if self.__init_producer(out_topic):
                 self.__run = True
                 return True
             else:
                 return False
-        if (out_topic is None) and (in_topic is not None):
-            if self.__init_consumer(in_topic, consumer_group, consumer_timeout=consumer_timeout, balance=balance):
-                self.__run = True
-                return True
-            else:
-                return False
+
+        if not self.__init_consumer(in_topic,
+                                    consumer_group,
+                                    consumer_timeout=consumer_timeout,
+                                    auto_offset_reset=auto_offset_reset,
+                                    balance=balance):
+            return False
         if not self.__init_producer(out_topic):
             return False
-        if not self.__init_consumer(in_topic, consumer_group, consumer_timeout=consumer_timeout, balance=balance):
-            return False
         self.__run = True
-        self.loger.info("****START**** Kafka启动成功.")
+        if self.loger:
+            self.loger.info("****START**** Kafka启动成功.")
         return True
 
     def stop(self):
@@ -155,10 +179,12 @@ class Kafka(object):
                 self.__consumer = None
             if self.__client:
                 self.__client = None
-            self.loger.info('****STOP**** Kafka实例停止运行.')
+            if self.loger:
+                self.loger.info('****STOP**** Kafka实例停止运行.')
             return True
         except Exception as e:
-            self.loger.error('停止失败，原因：'.format(e))
+            if self.loger:
+                self.loger.error('停止失败，原因：'.format(e))
             return False
 
     def __producer_send(self, message):
@@ -168,10 +194,12 @@ class Kafka(object):
         :return: 正确执行返回true
         '''
         if not self.__run:
-            self.loger.error('Kafka实例未启动.')
+            if self.loger:
+                self.loger.error('Kafka实例未启动.')
             return False
         if len(message) > self.__max_buf:
-            self.loger.error('消息大小为：{},已超过系统显示{}字节'.format(len(message), self.__max_buf))
+            if self.loger:
+                self.loger.error('消息大小为：{},已超过系统显示{}字节'.format(len(message), self.__max_buf))
             return False
         try:
             if not isinstance(message, bytes):
@@ -179,7 +207,8 @@ class Kafka(object):
             self.__producer.produce(message)
             return True
         except Exception as e:
-            self.loger.error('发送消息出错：{}'.format(e))
+            if self.loger:
+                self.loger.error('发送消息出错：{}'.format(e))
             return False
 
     def __consumer_get(self):
@@ -188,7 +217,8 @@ class Kafka(object):
         :return: 返回获取到的信息，如果无信息或者超时返回None
         '''
         if not self.__run:
-            self.loger.error('Kafka实例未启动.')
+            if self.loger:
+                self.loger.error('Kafka实例未启动.')
             return None
         try:
             for _msg in self.__consumer:
@@ -196,7 +226,8 @@ class Kafka(object):
                     return _msg.value.decode(self.__encoding)
             return None
         except Exception as e:
-            self.loger.error('接收信息出错：{}'.format(e))
+            if self.loger:
+                self.loger.error('接收信息出错：{}'.format(e))
             return None
 
     def __get_session(self, message):
@@ -264,11 +295,23 @@ class Kafka(object):
         try:
             sessionid = self.__get_session(message)
             if sessionid is None:
-                self.loger.error('待发送的信息没有sessionid,发送失败')
+                if self.loger:
+                    self.loger.error('待发送的信息没有sessionid,发送失败')
                 return json.dumps({'code': -1, 'err': '没有session值', 'sessionid': None, 'data': None})
             if not self.__producer_send(message):
                 return json.dumps({'code': -2, 'err': '发送远程请求失败', 'sessionid': sessionid, 'data': None})
             for i_retry in range(self.__max_retry):
+                # for msg in self.__consumer:
+                #     if msg:
+                #         resp_msg = msg.value.decode(self.__encoding)
+                #         if not resp_msg:
+                #             continue
+                #         resp_sessionid = self.__get_session(resp_msg)
+                #         if sessionid == resp_sessionid:
+                #             # resp_msg = resp_msg.replace("'", '"').replace('":,', '":"",')
+                #             return resp_msg
+                # if self.loger:
+                #     self.loger.error('获取超时，尝试第{}次重新获取.'.format(i_retry + 1))
                 while self.__run:
                     resp_msg = self.__consumer_get()
                     if resp_msg is None:
@@ -276,13 +319,13 @@ class Kafka(object):
                     resp_sessionid = self.__get_session(resp_msg)
                     if sessionid == resp_sessionid:
                         resp_msg = resp_msg.replace("'", '"').replace('":,', '":"",')
-                        # js_msg = json.loads(resp_msg)
-                        # return json.dumps(js_msg)
                         return resp_msg
-                self.loger.error('获取超时，尝试第{}次重新获取.'.format(i_retry+1))
+                if self.loger:
+                    self.loger.error('获取超时，尝试第{}次重新获取.'.format(i_retry + 1))
             return json.dumps({'code': -3, 'err': '获取回复超时', 'sessionid': sessionid, 'data': None})
         except Exception as e:
-            self.loger.error('发生异常：{}'.format(e))
+            if self.loger:
+                self.loger.error('发生异常：{}'.format(e))
             return json.dumps({'code': -7, 'err': '其他异常：{}'.format(e), 'sessionid': None, 'data': None})
 
     def send_always(self, msg):

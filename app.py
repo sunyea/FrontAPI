@@ -5,6 +5,8 @@ from LogFlask import Loger
 import json
 import uuid, time
 
+from kafka.CKafka import CKafka
+
 app = Flask(__name__)
 
 log = Loger('FrontAPI', 'debug', 'log/log.txt', True)
@@ -64,19 +66,24 @@ def common():
         group = 'group.common.{}'.format(sessionid)
 
         log.debug('发送命令:{}，并等待返回值'.format(msg))
-        kafka = Kafka(hosts=hosts, loger=log)
+        begin = time.clock()
+
+        kafka = Kafka(hosts=hosts, loger=None)
         kafka.start(in_topic=in_topic, out_topic=out_topic, consumer_group=group, consumer_timeout=6000, balance=False)
         rt = kafka.requestAndResponse(json.dumps(msg))
         kafka.stop()
-        log.debug('成功接收返回值：{}'.format(rt))
+
+        # kafka2 = CKafka(hosts=hosts)
+        # rt = kafka2.request_response(in_topic=in_topic, out_topic=out_topic, group=group.encode('utf-8'), msg=msg)
+        # rt = json.dumps(rt)
+
+        end = time.clock()
+        log.debug('成功接收返回值：{}，\n耗时：{}秒'.format(rt, end-begin))
         log.debug('\n****************结束处理通用请求\n')
         return rt
     except Exception as e:
         log.error('通用请求异常：{}'.format(e))
         return json.dumps({'code': -4, 'err': '通用请求异常：{}'.format(e), 'sessionid': sessionid, 'data': data})
-
-
-
 
 
 if __name__ == '__main__':
