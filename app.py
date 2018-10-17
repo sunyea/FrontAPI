@@ -5,8 +5,6 @@ from LogFlask import Loger
 import json
 import uuid, time
 
-from kafka.CKafka import CKafka
-
 app = Flask(__name__)
 
 log = Loger('FrontAPI', 'debug', 'log/log.txt', True)
@@ -73,9 +71,6 @@ def common():
         rt = kafka.requestAndResponse(json.dumps(msg))
         kafka.stop()
 
-        # kafka2 = CKafka(hosts=hosts)
-        # rt = kafka2.request_response(in_topic=in_topic, out_topic=out_topic, group=group.encode('utf-8'), msg=msg)
-        # rt = json.dumps(rt)
 
         end = time.clock()
         log.debug('成功接收返回值：{}，\n耗时：{}秒'.format(rt, end-begin))
